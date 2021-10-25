@@ -13,6 +13,8 @@ Ulteriori dettagli:
 
 Per il client potete usare telnet. Qui sotto un esempio di utilizzo:
 
+![example](example.png)
+
 ## Assignment - HTTP-based file transfer
 
 Scrivere un programma Java che implementi un server HTTP che gestisca richieste di trasferimento di file di diverso tipo (es. immagini jpeg, gif) provenienti da un browser Web.
