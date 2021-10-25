@@ -19,44 +19,27 @@ Unix-based (oppure il WSL su Windows) potete utilizzare
 cURL (https://curl.se/) da terminale o wget (https://www.gnu.org/software/wget/).
  */
 public class FileTransfer {
-    private static int maxUptime = 7000;
-    private static int maxDelay = 5000;
+    private static final int maxUptime = 7000;
+    private static final int maxDelay = 5000;
+    private static final int serverPort = 42069;
 
     public static void main(String[] args) {
+        //Creazione ThreadPool per servire i client
         ExecutorService pool = Executors.newCachedThreadPool();
 
-        try (ServerSocket serverSocket = new ServerSocket(42069)) {
+        //Creazione serverSocket
+        try (ServerSocket serverSocket = new ServerSocket(serverPort)) {
             System.out.println("Server running");
 
-            serverSocket.setSoTimeout(maxUptime);
+            serverSocket.setSoTimeout(maxUptime); //Imposta il timeout del socket
             while (true) {
-                try (Socket socket = serverSocket.accept();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                try {
+                    Socket socket = serverSocket.accept(); //Attesa connessione client
                     System.out.println("Host connected");
-                    //pool.execute(new FileSender(socket));
 
-                    String request = reader.readLine();
-                    String requestParam[] = request.split(" ");
-                    String file = requestParam[1].substring(1);
+                    pool.execute(new FileSender(socket)); //Passaggio del task al ThreadPool
 
-                    File fileRequested = new File(file);
-                    if (!fileRequested.exists()) {
-                        out.write("HTTP/1.1 404");
-                    } else {
-                        out.write("HTTP/1.1 200 OK\r\n");
-                        out.write("Content-Type: image/jpeg\r\n");
-                        out.write("\r\n");
-                        BufferedReader bufferedReader = new BufferedReader(new FileReader(fileRequested));
-
-                        int readContent;
-                        while((readContent = bufferedReader.read()) != -1) {
-                            out.write(readContent);
-                        }
-
-                        bufferedReader.close();
-                    }
-                } catch (SocketTimeoutException e) {
+                } catch (SocketTimeoutException e) { //Scaduto il timeout
                     break;
                 } catch (IOException e) {
                     System.err.println("Error while waiting for connection");
@@ -66,6 +49,7 @@ public class FileTransfer {
             System.err.println(e);
         }
 
+        //Chiusura ThreadPool
         pool.shutdown();
         try {
             if (!pool.awaitTermination(maxDelay, TimeUnit.MILLISECONDS)) {
@@ -87,12 +71,68 @@ class FileSender implements Runnable {
     }
 
     public void run() {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(communicationSocket.getInputStream()));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(communicationSocket.getInputStream()));
+             OutputStream out = communicationSocket.getOutputStream()) {
+            //Lettura richiesta
             String request = reader.readLine();
-            System.out.println(request);
+            String []requestParam = request.split(" ");
+
+            //Controllo del tipo di richiesta
+            if (!requestParam[0].equals("GET")) {
+                out.write("HTTP/1.1 405 Method Not Allowed\r\n\r\n".getBytes());
+                communicationSocket.close();
+                return;
+            }
+
+            String file = requestParam[1].substring(1); //Ottenimento filename
+            File fileRequested = new File(file); //Apertura file
+
+            //Controlla l'esistenza del file
+            if (!fileRequested.exists()) {
+                out.write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
+            } else {
+                //Lettura dei dati del file
+                byte[] fileData = new byte[(int) fileRequested.length()];
+                FileInputStream fileIn = new FileInputStream(fileRequested);
+                fileIn.read(fileData);
+                fileIn.close();
+
+                //Costruzione del response header
+                String responseHeader = "HTTP/1.1 200 OK\r\n";
+                responseHeader += "Content-Type: " + getContentType(file) + "\r\n";
+                responseHeader += "Content-Length: " + fileRequested.length() + "\r\n";
+                responseHeader += "\r\n";
+
+                //Invio della risposta al client
+                out.write(responseHeader.getBytes());
+                out.write(fileData);
+            }
+
+            communicationSocket.close(); //Chiusura socket
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error while waiting for connection: " + e);
         }
+    }
+
+    /**
+     *
+     * @param filepath stringa che identifica un path
+     * @return estensione del file se filepath è diverso da null
+     * @throws NullPointerException se filepath è null
+     */
+    private static String getContentType(String filepath) {
+        if (filepath == null) throw new NullPointerException();
+
+        String fileType;
+        switch (filepath.substring(filepath.length() - 3)) {
+            case "jpg" -> fileType = "image/jpeg";
+            case "png" -> fileType = "image/png";
+            case "gif" -> fileType = "image/gif";
+            case "txt" -> fileType = "txt/plain";
+            case "mp3" -> fileType = "audio/mpeg";
+            case "mp4" -> fileType = "video/mp4";
+            default -> fileType = "text/html";
+        }
+        return fileType;
     }
 }

@@ -1,4 +1,4 @@
-Questo è un file di prova.
-Potrebbe essere un file molto complicato, invece è del semplice testo.
+File di prova
+Potrebbe essere un file molto complicato, invece contiene del semplice testo.
 
 Ho aggiunto un paragrafo...
