@@ -34,11 +34,8 @@ indica quando il messaggio è stato inviato
 * RTT medio è stampato con 2 cifre dopo la virgola
 */
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
 
 public class PingerClient {
     private static final int packets = 10;
