@@ -28,10 +28,8 @@ PING CLIENT
 * stampa ogni messaggio spedito al server ed il RTT del ping oppure un * se la
 risposta non è stata ricevuta entro 2 secondi
 
-* dopo che ha ricevuto la decima risposta (o dopo il suo timeout), il client stampa un riassunto simile a quello stampato dal PING UNIX
-
----- PING Statistics ----
-
+* dopo che ha ricevuto la decima risposta (o dopo il suo timeout), il client stampa un riassunto simile a quello stampato dal PING UNIX\
+---- PING Statistics ----\
 10 packets transmitted, 7 packets received, 30% packet loss, round-trip (ms) min/avg/max = 63/190.29/290
 
 
