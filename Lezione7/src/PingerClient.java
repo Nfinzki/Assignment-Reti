@@ -49,6 +49,7 @@ public class PingerClient {
             System.exit(1);
         }
 
+        //Parsing parametri da riga di comando
         String hostname = args[0];
         int port = Integer.parseInt(args[1]);
         if (port < 0 || port > 65535) {
@@ -60,25 +61,31 @@ public class PingerClient {
         long max = Integer.MIN_VALUE;
         long avg = 0;
 
+        //Creazione socket
         try (DatagramSocket socket = new DatagramSocket()) {
             InetAddress host = InetAddress.getByName(hostname);
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(2000); //Timeout di 2 secondi
 
+            //Invia i pacchetti al server uno alla volta
             for (int i = 0; i < packets; i++) {
+                //Creazione messaggio da inviare al server
                 String msg = "PING " + i + " " + System.currentTimeMillis();
                 byte[] message = msg.getBytes();
 
+                //Creazione e invio del datagramma
                 DatagramPacket request = new DatagramPacket(message, message.length, host, port);
                 socket.send(request);
 
                 System.out.print(msg + " RTT: ");
                 try {
+                    //Attesa risposta
                     DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
                     long startTime = System.currentTimeMillis();
                     socket.receive(response);
-                    long RTT = System.currentTimeMillis() - startTime;
+                    long RTT = System.currentTimeMillis() - startTime; //Calcolo del RTT
                     System.out.println(RTT + " ms");
 
+                    //Aggiorna statistiche
                     packetsReceived++;
                     min = Math.min(min, RTT);
                     max = Math.max(max, RTT);
@@ -94,6 +101,7 @@ public class PingerClient {
         float percentage = packets - packetsReceived;
         percentage = percentage * 100 / packets;
 
+        //Stampa messaggio di statistiche
         System.out.println("---- PING Statistics ----");
         System.out.println(packets + " packets transmitted, " + packetsReceived + " packets received, "
                 + String.format("%.02f", percentage) +"% packet loss, round-trip (ms) min/avg/max = "

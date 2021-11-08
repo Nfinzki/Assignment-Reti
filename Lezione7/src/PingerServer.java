@@ -46,8 +46,9 @@ public class PingerServer {
     private static final int poolTimeout = 5000;
 
     public static void main(String []args) {
-        if (args.length < 1 || args.length > 2) { //TODO Rivedere dalle slide cosa scrivere in caso di errore
-            System.err.println("Usage: PingerServer Port [Seed]");
+        //Parsing degli argomenti da linea di comando
+        if (args.length < 1 || args.length > 2) {
+            System.err.println("Usage: PingerServer port [Seed]");
             System.exit(1);
         }
 
@@ -68,20 +69,24 @@ public class PingerServer {
         }
 
         //Inizializzazione del generatore di seed da passare ai thread
+        //Questo è necessario per evitare che ogni thread generi la stessa sequenza di perdite/ritardi
         Random seedGenerator = new Random(seed);
 
         //Inizializzazione ThreadPool
         ExecutorService pool = Executors.newCachedThreadPool();
 
+        //Inizializzazione socket
         System.out.println("Server starting...");
         try (DatagramSocket serverSocket = new DatagramSocket(port)) {
-            serverSocket.setSoTimeout(socketTimeout);
+            serverSocket.setSoTimeout(socketTimeout); //Imposta timeout
             System.out.println("Server started");
 
+            //Si mette in attesa di richieste
             while (true) {
                 DatagramPacket request = new DatagramPacket(new byte[bufferLength], bufferLength);
                 serverSocket.receive(request);
 
+                //Passa la richiesta al ThreadPool
                 pool.execute(new Pinger(serverSocket, request, seedGenerator.nextLong()));
             }
         } catch (SocketTimeoutException e) {
@@ -116,21 +121,28 @@ class Pinger implements Runnable{
     }
 
     public void run() {
+        //Inizializzazione generatore di perdita/ritardo
         Random generator = new Random(seed);
         int delay;
-        String msg = new String(request.getData(), 0, request.getLength());
+        String msg = new String(request.getData(), 0, request.getLength()); //Salvataggio richiesta
 
-        System.out.print(request.getAddress().getHostAddress() + ":" + request.getPort() + "> " + msg + " ACTION: ");
+        String echoMsg = request.getAddress().getHostAddress() + ":" + request.getPort() + "> " + msg + " ACTION: "; //Costruzione messaggio da stampare
         try {
             if (generator.nextInt(100) >= 24) { //Il pacchetto non viene perso con il 75% di probabilità
+                //Costruzione risposta
                 DatagramPacket response = new DatagramPacket(request.getData(), request.getLength(), request.getAddress(), request.getPort());
 
-                delay = generator.nextInt();
+                //Simulazione ritardo
+                delay = Math.abs(generator.nextInt(2000));
                 Thread.sleep(delay);
+
+                //Invia risposta
                 socket.send(response);
-                System.out.println("delayed " + delay + " ms");
+                //Stampa l'azione eseguita
+                System.out.println(echoMsg + "delayed " + delay + " ms");
             } else {
-                System.out.println("not sent");
+                //Stampa l'azione eseguita
+                System.out.println(echoMsg + "not sent");
             }
         } catch (IOException | InterruptedException e) {
             System.err.println(e.getMessage());
