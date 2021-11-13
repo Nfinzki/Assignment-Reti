@@ -1,6 +1,6 @@
-#Lezione8
+# Lezione8
 
-##Esercizio 1
+## Esercizio 1
 
 Scrivere un programma che legge il file di testo random.txt (in allegato) e scrive su un file di output
 la frequenza dei caratteri alfabetici contenuti nel testo. Lettura e scrittura devono essere
@@ -9,7 +9,7 @@ Non è necessario distinguere fra caratteri maiuscoli o minuscoli.
 Nota: dato il file in ingresso, potete assumere che ciascun byte che leggete dal buffer rappresenti
 un carattere.
 
-##Assignment - Gestione conti correnti
+## Assignment - Gestione conti correnti
 
 Creare un file contenente oggetti che rappresentano i conti correnti di una banca. Ogni conto corrente contiene il nome del correntista e una lista di movimenti. I movimenti registrati per un conto corrente sono relativi agli ultimi 2 anni, quindi possono essere molto numerosi.
 
