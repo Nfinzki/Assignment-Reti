@@ -26,7 +26,7 @@ public class EchoClient {
         }
 
         try (SocketChannel client = SocketChannel.open(new InetSocketAddress(hostname, port))) { //Apertura socket
-            ByteBuffer buffer = ByteBuffer.allocate(args[0].length() + " - echoed by server".length()); //Alloca il buffer //TODO Rivedere
+            ByteBuffer buffer = ByteBuffer.allocate(args[0].length() + " - echoed by server".length()); //Alloca il buffer
             buffer.put(args[0].getBytes()); //Scrive la stringa sul buffer
             buffer.flip(); //Predispone il buffer in lettura
             client.write(buffer); //Legge dal buffer e scrive sul canale

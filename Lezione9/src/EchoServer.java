@@ -24,6 +24,8 @@ public class EchoServer {
     private static final int port = 42069;
     private static final int bufferSize = 16 * 1024;
 
+    private static final int timeout = 10000;
+
     public static void main(String []args) {
         //Inizializzazione de server
         try (ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
@@ -38,13 +40,14 @@ public class EchoServer {
 
             while (true) {
                 //Attesa di una richiesta
-                selector.select();
+                if (selector.select(timeout) == 0) break;
 
                 //Recupera le chiavi pronte
                 Set<SelectionKey> readyKeys = selector.selectedKeys();
                 Iterator<SelectionKey> iterator = readyKeys.iterator();
 
                 while (iterator.hasNext()) {
+                    //Recupera la chiave
                     SelectionKey key = iterator.next();
                     iterator.remove();
 
@@ -52,12 +55,12 @@ public class EchoServer {
                         if (key.isAcceptable()) { //Nuova connessione
                             ServerSocketChannel server = (ServerSocketChannel) key.channel(); //Recupera il channel
                             SocketChannel client = server.accept(); //Accetta la connessione del client
-                            System.out.println(client + " connected");
+                            System.out.println(client);
 
                             client.configureBlocking(false); //Imposta il canale in modalità non bloccante
-                            SelectionKey clientKey = client.register( //Registra il canale sul Selector in lettura e scrittura
+                            SelectionKey clientKey = client.register( //Registra il canale sul Selector in lettura
                                     selector,
-                                    SelectionKey.OP_WRITE | SelectionKey.OP_READ
+                                    SelectionKey.OP_READ
                             );
 
                             //Alloca il buffer e fa l'attach con il canale
@@ -65,14 +68,15 @@ public class EchoServer {
                             clientKey.attach(byteBuffer);
 
                         } else if (key.isReadable()) { //Il client è pronto in lettura
-                            System.out.println("isReadable");
                             SocketChannel client = (SocketChannel) key.channel(); //Recupera il channel
                             ByteBuffer byteBuffer = (ByteBuffer) key.attachment(); //Recupera il buffer
 
-                            byteBuffer.clear();
+                            byteBuffer.clear(); //Predispone la scrittura sul buffer
                             client.read(byteBuffer); //Scrive dati sul buffer
+
+                            //Aggiunge all'interestSet l'operazione di scrittura
+                            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                         } else if (key.isWritable()) { //Il client è pronto in scrittura
-                            System.out.println("isWritable");
                             SocketChannel client = (SocketChannel) key.channel(); //Recupera il channel
                             ByteBuffer byteBuffer = (ByteBuffer) key.attachment(); //Recupera il buffer
 
@@ -81,6 +85,10 @@ public class EchoServer {
 
                             client.write(byteBuffer); //Legge i dati dal buffer e li scrive sul canale
                             byteBuffer.clear();
+
+                            //Chiusura comunicazione con il client
+                            client.close();
+                            key.cancel();
                         }
                     } catch (IOException e) {
                         System.err.println("Error serving requests: " + e.getMessage());
@@ -89,6 +97,8 @@ public class EchoServer {
                     }
                 }
             }
+
+            System.out.println("Closing server...");
         } catch (IOException e) {
             System.err.println("IOException: " + e.getMessage());
             System.exit(1);
