@@ -9,7 +9,6 @@ metodo sleep().
 */
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
@@ -18,14 +17,13 @@ public class WelcomeServer {
     private static final int waitTime = 2000;
 
     public static void main(String []args) {
-        try (MulticastSocket multicastSocket = new MulticastSocket(port)) {
+        try (MulticastSocket multicastSocket = new MulticastSocket()) {
             InetAddress groupAddress = InetAddress.getByName(args[0]);
             byte []welcomeMessage = "<<Welcome!>>".getBytes();
 
             DatagramPacket packet = new DatagramPacket(welcomeMessage, welcomeMessage.length, groupAddress, port);
 
             while(true) {
-                System.out.println("Sending " + packet);
                 multicastSocket.send(packet);
                 Thread.sleep(waitTime);
             }
