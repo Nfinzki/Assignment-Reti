@@ -13,4 +13,13 @@ welcome, quindi termina.
 
 *Ad esempio con indirizzo IP 239.255.1.3
 
-## Assignment - 
+## Assignment - Time Server UDP
+
+Definire un Server TimeServer, che
+* invia su un gruppo di multicast dategroup, ad intervalli regolari, la data e
+l’ora.
+* attende tra un invio ed il successivo un intervallo di tempo simulata
+mediante il metodo sleep().
+* l’indirizzo IP di dategroup viene introdotto da linea di comando.
+* definire quindi un client TimeClient che si unisce a dategroup e riceve,
+per dieci volte consecutive, data ed ora, le visualizza, quindi termina.
